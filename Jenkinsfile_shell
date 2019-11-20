@@ -2,7 +2,7 @@ pipeline {
     agent none
 
     parameters {
-        string(defaultValue: "https://github.com/Florin-AndreiMihai/cubrid2.git", description: 'Whats the github URL?', name: 'GitHubURL')
+        string(defaultValue: "https://github.com/Florin-AndreiMihai/cubrid.git", description: 'Whats the github URL?', name: 'GitHubURL')
         string(defaultValue: "develop", description: 'Whats the Branch Name?', name: 'BranchName')
         choice(name: 'Build', choices: ['All', 'Debug', 'Release'], description: 'Build specific job')
     }
