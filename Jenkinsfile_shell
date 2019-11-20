@@ -1,0 +1,1014 @@
+pipeline {
+    agent none
+
+    parameters {
+        string(defaultValue: "https://github.com/Florin-AndreiMihai/cubrid2.git", description: 'Whats the github URL?', name: 'GitHubURL')
+        string(defaultValue: "develop", description: 'Whats the Branch Name?', name: 'BranchName')
+        choice(name: 'Build', choices: ['All', 'Debug', 'Release'], description: 'Build specific job')
+    }
+
+    environment {
+        OUTPUT_DIR = 'packages'
+        TEST_REPORT = 'reports'
+    }
+
+    stages {
+        stage('Build') {
+            parallel {
+                stage('Release') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            alwaysPull true
+                            args '--init'
+                        }
+                    }
+                    environment {
+                        MAKEFLAGS = '-j'
+                    }
+                    steps {
+                        script {
+                            currentBuild.displayName = sh(returnStdout: true, script: './build.sh -v').trim()
+                        }
+
+                        echo 'Get repository...'
+                        deleteDir()
+                        git branch: "${params.BranchName}", url: "${params.GitHubURL}"
+
+                        echo 'Get Cubrid Manager...'
+                        dir('cubridmanager') {
+                            git branch: 'develop', url: 'https://github.com/CUBRID/cubrid-manager-server.git'
+                        }
+
+                        echo 'Building...'
+                        sh "scl enable devtoolset-8 -- /entrypoint.sh build"
+
+                        echo 'Packing...'
+                        sh "scl enable devtoolset-8 -- /entrypoint.sh dist -o ${OUTPUT_DIR}"
+
+                        echo 'Stashing Build...'
+                        stash includes: "${OUTPUT_DIR}/*", name: "build_release"
+
+                    }
+                    post {
+                        success {
+                            archiveArtifacts "${OUTPUT_DIR}/*"
+                        }
+                    }
+                }
+
+                stage('Debug') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            alwaysPull true
+                            args '--init'
+                        }
+                    }
+                    environment {
+                        MAKEFLAGS = '-j'
+                    }
+                    steps {
+
+                        script {
+                            currentBuild.displayName = sh(returnStdout: true, script: './build.sh -v').trim()
+                        }
+
+                        echo 'Get repository...'
+                        deleteDir()
+                        git branch: "${params.BranchName}", url: "${params.GitHubURL}"
+
+                        echo 'Get Cubrid Manager...'
+                        dir('cubridmanager') {
+                            git branch: 'develop', url: 'https://github.com/CUBRID/cubrid-manager-server.git'
+                        }
+
+                        echo 'Building...'
+                        sh "scl enable devtoolset-8 -- /entrypoint.sh build -m debug"
+
+                        echo 'Packing...'
+                        sh "scl enable devtoolset-8 -- /entrypoint.sh dist -m debug -o ${OUTPUT_DIR}"
+
+                        echo 'Stashing Build...'
+                        stash includes: "${OUTPUT_DIR}/*", name: "build_debug"
+
+                    }
+                    post {
+                        success {
+                            archiveArtifacts "${OUTPUT_DIR}/*"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Prep Test Data') {
+            agent {
+                docker {
+                    image 'florinmihai/dockerci:develop'
+                    label 'linux'
+                    args '--init'
+                }
+            }
+            steps {
+
+                echo 'Pulling tastcases...'
+                dir('cubrid-testcases-shell') {
+                    git branch: 'develop', url: 'https://github.com/Florin-AndreiMihai/cubrid-testcases-shell.git'
+                }
+
+                echo 'Archiving shell tests...'
+                sh 'tar -czf cubrid-testcases.tar.gz cubrid-testcases-shell/shell/_01_utility cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+
+                echo 'Stashing shell tests...'
+                stash includes: 'cubrid-testcases.tar.gz', name: "cubridTC_medium"
+
+                echo 'Archiving shell 1 tests...'
+                sh 'tar -czf cubrid-testcases1.tar.gz cubrid-testcases-shell/shell/_02_sqlx_init cubrid-testcases-shell/shell/_05_addition cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+
+                echo 'Stashing shell 1 tests...'
+                stash includes: 'cubrid-testcases1.tar.gz', name: "cubridTC_sql1"
+
+                echo 'Archiving shell 2 tests...'
+                sh 'tar -czf cubrid-testcases2.tar.gz cubrid-testcases-shell/shell/_06_issues/_10_1h cubrid-testcases-shell/shell/_06_issues/_10_2h cubrid-testcases-shell/shell/_06_issues/_11_1h cubrid-testcases-shell/shell/_06_issues/_11_2h cubrid-testcases-shell/shell/_06_issues/_12_1h cubrid-testcases-shell/shell/_06_issues/_12_2h cubrid-testcases-shell/shell/_06_issues/_13_1h cubrid-testcases-shell/shell/_06_issues/_13_2h cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+
+                echo 'Stashing shell 2 tests...'
+                stash includes: 'cubrid-testcases2.tar.gz', name: "cubridTC_sql2"
+
+                echo 'Archiving shell 3 tests...'
+                sh 'tar -czf cubrid-testcases3.tar.gz cubrid-testcases-shell/shell/_03_itrack cubrid-testcases-shell/shell/_04_misc cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+
+                echo 'Stashing shell 3 tests...'
+                stash includes: 'cubrid-testcases3.tar.gz', name: "cubridTC_sql3"
+
+                echo 'Archiving shell 4 tests...'
+                sh 'tar -czf cubrid-testcases4.tar.gz cubrid-testcases-shell/shell/_25_unstable cubrid-testcases-shell/shell/_26_apricot_qa cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+
+                echo 'Stashing shell 4 tests...'
+                stash includes: 'cubrid-testcases4.tar.gz', name: "cubridTC_sql4"
+
+                echo 'Archiving shell 5 tests...'
+                sh 'tar -czf cubrid-testcases5.tar.gz cubrid-testcases-shell/shell/_27_aprium_qa/_01_i18n cubrid-testcases-shell/shell/_09_64bit/_01_filesize cubrid-testcases-shell/shell/_11_codecoverage/system_parameter cubrid-testcases-shell/shell/_21_xa cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+
+                echo 'Stashing shell 5 tests...'
+                stash includes: 'cubrid-testcases5.tar.gz', name: "cubridTC_sql5"
+
+                echo 'Archiving shell 6 tests...'
+                sh 'tar -czf cubrid-testcases6.tar.gz cubrid-testcases-shell/shell/_28_features_844 cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+
+                echo 'Stashing shell 6 tests...'
+                stash includes: 'cubrid-testcases6.tar.gz', name: "cubridTC_sql6"
+
+                echo 'Archiving shell 7 tests...'
+                sh 'tar -czf cubrid-testcases7.tar.gz cubrid-testcases-shell/shell/_29_features_920 cubrid-testcases-shell/shell/_30_banana_qa cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+
+                echo 'Stashing shell 7 tests...'
+                stash includes: 'cubrid-testcases7.tar.gz', name: "cubridTC_sql7"
+
+                echo 'Archiving shell 8 tests...'
+                sh 'tar -czf cubrid-testcases8.tar.gz cubrid-testcases-shell/shell/_22_news_service_mysql_compatibility/_01_regular_expression cubrid-testcases-shell/shell/_23_mysql_compatibility/_01_config cubrid-testcases-shell/shell/_33_mvcc_issues cubrid-testcases-shell/shell/_06_issues/_14_1h cubrid-testcases-shell/shell/_06_issues/_14_2h cubrid-testcases-shell/shell/_06_issues/_15_1h cubrid-testcases-shell/shell/_06_issues/_15_2h cubrid-testcases-shell/shell/_06_issues/_16_2h cubrid-testcases-shell/shell/_06_issues/_17_1h cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+
+                echo 'Stashing shell 8 tests...'
+                stash includes: 'cubrid-testcases8.tar.gz', name: "cubridTC_sql8"
+
+                echo 'Archiving shell 9 tests...'
+                sh 'tar -czf cubrid-testcases9.tar.gz cubrid-testcases-shell/shell/_07_index_enhancement cubrid-testcases-shell/shell/_34_banana_pie cubrid-testcases-shell/shell/_24_apricot cubrid-testcases-shell/shell/_31_features_845 cubrid-testcases-shell/shell/_32_features_930 cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+
+                echo 'Stashing shell 9 tests...'
+                stash includes: 'cubrid-testcases9.tar.gz', name: "cubridTC_sql9"
+            }
+        }
+
+        stage('Testing') {
+            parallel {
+                stage('Linux Release Shell') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing build...'
+                        unstash 'build_release'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell/packages/CUBRID-10.2.0.*-Linux.x86_64.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_medium'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell/cubrid-testcases.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+
+                    }
+
+                    post {
+                        always {
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Release Shell 1') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing build...'
+                        unstash 'build_release'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@2/packages/CUBRID-10.2.0.*-Linux.x86_64.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql1'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@2/cubrid-testcases1.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+
+                    }
+
+                    post {
+                        always {
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Release Shell 2') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing build...'
+                        unstash 'build_release'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@3/packages/CUBRID-10.2.0.*-Linux.x86_64.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql2'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@3/cubrid-testcases2.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+
+                    }
+
+                    post {
+                        always {
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Release Shell 3') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing build...'
+                        unstash 'build_release'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@4/packages/CUBRID-10.2.0.*-Linux.x86_64.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql3'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@4/cubrid-testcases3.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Release Shell 4') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing build...'
+                        unstash 'build_release'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@5/packages/CUBRID-10.2.0.*-Linux.x86_64.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql4'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@5/cubrid-testcases4.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Release Shell 5') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing build...'
+                        unstash 'build_release'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@6/packages/CUBRID-10.2.0.*-Linux.x86_64.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql5'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@6/cubrid-testcases5.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Release Shell 6') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing build...'
+                        unstash 'build_release'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@7/packages/CUBRID-10.2.0.*-Linux.x86_64.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql6'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@7/cubrid-testcases6.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Release Shell 7') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing build...'
+                        unstash 'build_release'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@8/packages/CUBRID-10.2.0.*-Linux.x86_64.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql7'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@8/cubrid-testcases7.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Release Shell 8') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing build...'
+                        unstash 'build_release'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@9/packages/CUBRID-10.2.0.*-Linux.x86_64.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql8'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@9/cubrid-testcases8.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Release Shell 9') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing build...'
+                        unstash 'build_release'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@10/packages/CUBRID-10.2.0.*-Linux.x86_64.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql9'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@10/cubrid-testcases9.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Debug Shell') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing...'
+                        unstash 'build_debug'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@11/packages/CUBRID-10.2.0.*-Linux.x86_64-debug.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_medium'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@11/cubrid-testcases.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Debug Shell 1') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing...'
+                        unstash 'build_debug'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@12/packages/CUBRID-10.2.0.*-Linux.x86_64-debug.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql1'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@12/cubrid-testcases1.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Debug Shell 2') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing...'
+                        unstash 'build_debug'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@13/packages/CUBRID-10.2.0.*-Linux.x86_64-debug.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql2'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@13/cubrid-testcases2.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell'
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Debug Shell 3') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing...'
+                        unstash 'build_debug'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@14/packages/CUBRID-10.2.0.*-Linux.x86_64-debug.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql3'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@14/cubrid-testcases3.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Debug Shell 4') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing...'
+                        unstash 'build_debug'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@15/packages/CUBRID-10.2.0.*-Linux.x86_64-debug.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql4'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@15/cubrid-testcases4.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Debug Shell 5') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing...'
+                        unstash 'build_debug'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@16/packages/CUBRID-10.2.0.*-Linux.x86_64-debug.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql5'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@16/cubrid-testcases5.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Debug Shell 6') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing...'
+                        unstash 'build_debug'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@17/packages/CUBRID-10.2.0.*-Linux.x86_64-debug.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql6'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@17/cubrid-testcases6.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Debug Shell 7') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing...'
+                        unstash 'build_debug'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@18/packages/CUBRID-10.2.0.*-Linux.x86_64-debug.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql7'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@18/cubrid-testcases7.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Debug Shell 8') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing...'
+                        unstash 'build_debug'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@19/packages/CUBRID-10.2.0.*-Linux.x86_64-debug.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql8'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@19/cubrid-testcases8.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+
+                stage('Linux Debug Shell 9') {
+                    when {
+                        expression {
+                            params.Build == 'Debug' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            args '--init'
+                        }
+                    }
+                    steps {
+
+                        echo 'Unstashing...'
+                        unstash 'build_debug'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@20/packages/CUBRID-10.2.0.*-Linux.x86_64-debug.tar.gz -C /home'
+
+                        echo 'Unstashing curbidTC...'
+                        unstash 'cubridTC_sql9'
+
+                        echo 'Unzipping...'
+                        sh 'tar -xzf /var/jenkins_home/workspace/cubrid_shell@20/cubrid-testcases9.tar.gz -C /home'
+
+                        echo 'Testing...'
+                        sh '/entrypoint.sh shell || echo "$? failed"'
+                    }
+
+                    post {
+                        always {
+
+                            archiveArtifacts "${TEST_REPORT}/*"
+                            junit "${TEST_REPORT}/*.xml"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            //build job: "${DEPLOY_JOB}", parameters: [string(name: 'PROJECT_NAME', value: "${JOB_NAME}")],
+            //propagate: false
+            emailext replyTo: '$DEFAULT_REPLYTO', to: '$DEFAULT_RECIPIENTS',
+                subject: '$DEFAULT_SUBJECT', body: '''${JELLY_SCRIPT,template="html"}'''
+        }
+    }
+}
