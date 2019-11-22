@@ -39,8 +39,6 @@ pipeline {
                         script {
                             currentBuild.displayName = sh(returnStdout: true, script: './build.sh -v').trim()
                         }
-                        
-                        sleep 4500000
 
                         echo 'Get repository...'
                         deleteDir()
