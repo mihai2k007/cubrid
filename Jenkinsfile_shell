@@ -125,6 +125,8 @@ pipeline {
                     image 'florinmihai/dockerci:develop'
                     label 'linux'
                     args '--init'
+                    registryUrl 'https://index.docker.io/v1/'
+                    registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                 }
             }
             steps {
@@ -209,6 +211,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -249,6 +253,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -289,6 +295,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -330,6 +338,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -372,6 +382,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -414,6 +426,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -456,6 +470,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -498,6 +514,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -540,6 +558,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -582,6 +602,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -624,6 +646,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -665,6 +689,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -706,6 +732,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -747,6 +775,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -788,6 +818,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -829,6 +861,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -870,6 +904,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -911,6 +947,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -952,6 +990,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -993,6 +1033,8 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
