@@ -28,6 +28,8 @@ pipeline {
                             label 'linux'
                             alwaysPull true
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     environment {
@@ -76,6 +78,8 @@ pipeline {
                             label 'linux'
                             alwaysPull true
                             args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     environment {
@@ -143,7 +147,7 @@ pipeline {
                 stash includes: 'cubrid-testcases1.tar.gz', name: "cubridTC_sql1"
 
                 echo 'Archiving shell 2 tests...'
-                sh 'tar -czf cubrid-testcases2.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases2.tar.gz cubrid-testcases-shell/shell/_06_issues/_10_1h cubrid-testcases-shell/shell/_06_issues/_10_2h cubrid-testcases-shell/shell/_06_issues/_11_1h cubrid-testcases-shell/shell/_06_issues/_11_2h cubrid-testcases-shell/shell/_06_issues/_12_1h cubrid-testcases-shell/shell/_06_issues/_12_2h cubrid-testcases-shell/shell/_06_issues/_13_1h cubrid-testcases-shell/shell/_06_issues/_13_2h cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 2 tests...'
                 stash includes: 'cubrid-testcases2.tar.gz', name: "cubridTC_sql2"
@@ -179,7 +183,7 @@ pipeline {
                 stash includes: 'cubrid-testcases7.tar.gz', name: "cubridTC_sql7"
 
                 echo 'Archiving shell 8 tests...'
-                sh 'tar -czf cubrid-testcases8.tar.gz cubrid-testcases-shell/shell/_22_news_service_mysql_compatibility/_01_regular_expression cubrid-testcases-shell/shell/_23_mysql_compatibility/_01_config cubrid-testcases-shell/shell/_33_mvcc_issues cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases8.tar.gz cubrid-testcases-shell/shell/_22_news_service_mysql_compatibility/_01_regular_expression cubrid-testcases-shell/shell/_23_mysql_compatibility/_01_config cubrid-testcases-shell/shell/_33_mvcc_issues cubrid-testcases-shell/shell/_06_issues/_14_1h cubrid-testcases-shell/shell/_06_issues/_14_2h cubrid-testcases-shell/shell/_06_issues/_15_1h cubrid-testcases-shell/shell/_06_issues/_15_2h cubrid-testcases-shell/shell/_06_issues/_16_2h cubrid-testcases-shell/shell/_06_issues/_17_1h cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 8 tests...'
                 stash includes: 'cubrid-testcases8.tar.gz', name: "cubridTC_sql8"
