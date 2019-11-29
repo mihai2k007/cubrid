@@ -137,19 +137,19 @@ pipeline {
                 }
 
                 echo 'Archiving shell tests...'
-                sh 'tar -czf cubrid-testcases.tar.gz cubrid-testcases-shell/shell/_01_utility cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases.tar.gz cubrid-testcases-shell/shell/_32_features_930 cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell tests...'
                 stash includes: 'cubrid-testcases.tar.gz', name: "cubridTC_medium"
 
                 echo 'Archiving shell 1 tests...'
-                sh 'tar -czf cubrid-testcases1.tar.gz cubrid-testcases-shell/shell/_02_sqlx_init cubrid-testcases-shell/shell/_05_addition cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases1.tar.gz cubrid-testcases-shell/shell/_02_sqlx_init cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 1 tests...'
                 stash includes: 'cubrid-testcases1.tar.gz', name: "cubridTC_sql1"
 
                 echo 'Archiving shell 2 tests...'
-                sh 'tar -czf cubrid-testcases2.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases2.tar.gz cubrid-testcases-shell/shell/_31_features_845 cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 2 tests...'
                 stash includes: 'cubrid-testcases2.tar.gz', name: "cubridTC_sql2"
@@ -191,7 +191,7 @@ pipeline {
                 stash includes: 'cubrid-testcases8.tar.gz', name: "cubridTC_sql8"
 
                 echo 'Archiving shell 9 tests...'
-                sh 'tar -czf cubrid-testcases9.tar.gz cubrid-testcases-shell/shell/_07_index_enhancement cubrid-testcases-shell/shell/_34_banana_pie cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases9.tar.gz cubrid-testcases-shell/shell/_07_index_enhancement cubrid-testcases-shell/shell/_34_banana_pie cubrid-testcases-shell/shell/_24_apricot cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 9 tests...'
                 stash includes: 'cubrid-testcases9.tar.gz', name: "cubridTC_sql9"
