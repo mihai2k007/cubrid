@@ -4,13 +4,12 @@ pipeline {
     parameters {
         string(defaultValue: "https://github.com/Florin-AndreiMihai/cubrid2.git", description: 'Whats the github URL?', name: 'GitHubURL')
         string(defaultValue: "develop", description: 'Whats the Branch Name?', name: 'BranchName')
-        choice(name: 'Build', choices: ['All', 'Debug', 'Release'], description: 'Build specific job')
+        choice(name: 'Build', choices: ['All', 'Debug', 'Release', 'test'], description: 'Build specific job')
     }
 
     environment {
         OUTPUT_DIR = 'packages'
         TEST_REPORT = 'reports'
-        TEST_DUMPS = 'dumps'
     }
 
     stages {
@@ -19,7 +18,7 @@ pipeline {
                 stage('Release') {
                     when {
                         expression {
-                            params.Build == 'Release' || params.Build == 'All'
+                            params.Build == 'Release' || params.Build == 'All' || params.Build == 'test'
                         }
                     }
                     agent {
@@ -28,8 +27,6 @@ pipeline {
                             label 'linux'
                             alwaysPull true
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     environment {
@@ -69,7 +66,7 @@ pipeline {
                 stage('Debug') {
                     when {
                         expression {
-                            params.Build == 'Debug' || params.Build == 'All'
+                            params.Build == 'Debug' || params.Build == 'All' || params.Build == 'test'
                         }
                     }
                     agent {
@@ -78,8 +75,6 @@ pipeline {
                             label 'linux'
                             alwaysPull true
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     environment {
@@ -125,8 +120,6 @@ pipeline {
                     image 'florinmihai/dockerci:develop'
                     label 'linux'
                     args '--init'
-                    registryUrl 'https://index.docker.io/v1/'
-                    registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                 }
             }
             steps {
@@ -137,55 +130,55 @@ pipeline {
                 }
 
                 echo 'Archiving shell tests...'
-                sh 'tar -czf cubrid-testcases.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases.tar.gz cubrid-testcases-shell/shell/_01_utility cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell tests...'
                 stash includes: 'cubrid-testcases.tar.gz', name: "cubridTC_medium"
 
                 echo 'Archiving shell 1 tests...'
-                sh 'tar -czf cubrid-testcases1.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases1.tar.gz cubrid-testcases-shell/shell/_02_sqlx_init cubrid-testcases-shell/shell/_05_addition cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 1 tests...'
                 stash includes: 'cubrid-testcases1.tar.gz', name: "cubridTC_sql1"
 
                 echo 'Archiving shell 2 tests...'
-                sh 'tar -czf cubrid-testcases2.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases2.tar.gz cubrid-testcases-shell/shell/_06_issues/_10_1h cubrid-testcases-shell/shell/_06_issues/_10_2h cubrid-testcases-shell/shell/_06_issues/_11_1h cubrid-testcases-shell/shell/_06_issues/_11_2h cubrid-testcases-shell/shell/_06_issues/_12_1h cubrid-testcases-shell/shell/_06_issues/_12_2h cubrid-testcases-shell/shell/_06_issues/_13_1h cubrid-testcases-shell/shell/_06_issues/_13_2h cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 2 tests...'
                 stash includes: 'cubrid-testcases2.tar.gz', name: "cubridTC_sql2"
 
                 echo 'Archiving shell 3 tests...'
-                sh 'tar -czf cubrid-testcases3.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases3.tar.gz cubrid-testcases-shell/shell/_03_itrack cubrid-testcases-shell/shell/_04_misc cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 3 tests...'
                 stash includes: 'cubrid-testcases3.tar.gz', name: "cubridTC_sql3"
 
                 echo 'Archiving shell 4 tests...'
-                sh 'tar -czf cubrid-testcases4.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases4.tar.gz cubrid-testcases-shell/shell/_25_unstable cubrid-testcases-shell/shell/_26_apricot_qa cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 4 tests...'
                 stash includes: 'cubrid-testcases4.tar.gz', name: "cubridTC_sql4"
 
                 echo 'Archiving shell 5 tests...'
-                sh 'tar -czf cubrid-testcases5.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases5.tar.gz cubrid-testcases-shell/shell/_27_aprium_qa/_01_i18n cubrid-testcases-shell/shell/_09_64bit/_01_filesize cubrid-testcases-shell/shell/_11_codecoverage/system_parameter cubrid-testcases-shell/shell/_21_xa cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 5 tests...'
                 stash includes: 'cubrid-testcases5.tar.gz', name: "cubridTC_sql5"
 
                 echo 'Archiving shell 6 tests...'
-                sh 'tar -czf cubrid-testcases6.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases6.tar.gz cubrid-testcases-shell/shell/_28_features_844 cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 6 tests...'
                 stash includes: 'cubrid-testcases6.tar.gz', name: "cubridTC_sql6"
 
                 echo 'Archiving shell 7 tests...'
-                sh 'tar -czf cubrid-testcases7.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases7.tar.gz cubrid-testcases-shell/shell/_29_features_920 cubrid-testcases-shell/shell/_30_banana_qa cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 7 tests...'
                 stash includes: 'cubrid-testcases7.tar.gz', name: "cubridTC_sql7"
 
                 echo 'Archiving shell 8 tests...'
-                sh 'tar -czf cubrid-testcases8.tar.gz cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
+                sh 'tar -czf cubrid-testcases8.tar.gz cubrid-testcases-shell/shell/_22_news_service_mysql_compatibility/_01_regular_expression cubrid-testcases-shell/shell/_23_mysql_compatibility/_01_config cubrid-testcases-shell/shell/_33_mvcc_issues cubrid-testcases-shell/shell/_06_issues/_14_1h cubrid-testcases-shell/shell/_06_issues/_14_2h cubrid-testcases-shell/shell/_06_issues/_15_1h cubrid-testcases-shell/shell/_06_issues/_15_2h cubrid-testcases-shell/shell/_06_issues/_16_2h cubrid-testcases-shell/shell/_06_issues/_17_1h cubrid-testcases-shell/shell/config cubrid-testcases-shell/.git'
 
                 echo 'Stashing shell 8 tests...'
                 stash includes: 'cubrid-testcases8.tar.gz', name: "cubridTC_sql8"
@@ -211,8 +204,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -253,8 +244,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -295,8 +284,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -321,7 +308,6 @@ pipeline {
                     post {
                         always {
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -338,8 +324,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -365,7 +349,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -374,7 +357,7 @@ pipeline {
                 stage('Linux Release Shell 4') {
                     when {
                         expression {
-                            params.Build == 'Release' || params.Build == 'All'
+                            params.Build == 'Release' || params.Build == 'All' || params.Build == 'test'
                         }
                     }
                     agent {
@@ -382,8 +365,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -409,7 +390,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -426,8 +406,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -453,7 +431,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -470,8 +447,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -497,7 +472,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -514,8 +488,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -541,7 +513,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -558,8 +529,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -585,7 +554,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -594,7 +562,7 @@ pipeline {
                 stage('Linux Release Shell 9') {
                     when {
                         expression {
-                            params.Build == 'Release' || params.Build == 'All'
+                            params.Build == 'Release' || params.Build == 'All' || params.Build == 'test'
                         }
                     }
                     agent {
@@ -602,8 +570,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -629,7 +595,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -646,8 +611,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -672,7 +635,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -689,8 +651,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -715,7 +675,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -732,8 +691,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -758,7 +715,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -775,8 +731,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -801,7 +755,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -818,8 +771,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -844,7 +795,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -861,8 +811,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -887,7 +835,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -904,8 +851,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -930,7 +875,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -947,8 +891,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -973,7 +915,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -990,8 +931,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -1016,7 +955,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
@@ -1025,7 +963,7 @@ pipeline {
                 stage('Linux Debug Shell 9') {
                     when {
                         expression {
-                            params.Build == 'Debug' || params.Build == 'All'
+                            params.Build == 'Debug' || params.Build == 'All' || params.Build == 'test'
                         }
                     }
                     agent {
@@ -1033,8 +971,6 @@ pipeline {
                             image 'florinmihai/dockerci:develop'
                             label 'linux'
                             args '--init'
-                            registryUrl 'https://index.docker.io/v1/'
-                            registryCredentialsId '0b8aefb7-bb51-4cfa-8d02-0edbb5ba980f'
                         }
                     }
                     steps {
@@ -1059,7 +995,6 @@ pipeline {
                         always {
 
                             archiveArtifacts "${TEST_REPORT}/*"
-                            archiveArtifacts "${TEST_DUMPS}/*"
                             junit "${TEST_REPORT}/*.xml"
                         }
                     }
