@@ -1,0 +1,89 @@
+pipeline {
+    agent none
+
+    parameters {
+        string(defaultValue: "https://github.com/Florin-AndreiMihai/cubrid.git", description: 'Whats the github URL?', name: 'GitHubURL')
+        string(defaultValue: "develop", description: 'Whats the Branch Name?', name: 'BranchName')
+        choice(name: 'Build', choices: ['All', 'Debug', 'Release'], description: 'Build specific job')
+    }
+
+    triggers {
+        pollSCM('H 1 * * *')
+    }
+
+    environment {
+        OUTPUT_DIR = 'packages'
+        TEST_REPORT = 'reports'
+    }
+
+    stages {
+        stage('Build') {
+            parallel {
+                stage('Release') {
+                    when {
+                        expression {
+                            params.Build == 'Release' || params.Build == 'All'
+                        }
+                    }
+                    agent {
+                        docker {
+                            image 'florinmihai/dockerci:develop'
+                            label 'linux'
+                            alwaysPull true
+                            args '--init'
+                            registryUrl 'https://index.docker.io/v1/'
+                            registryCredentialsId '23afa7fd-b5c6-49f1-95a3-ddc2435566d9'
+                        }
+                    }
+                    environment {
+                        MAKEFLAGS = '-j2'
+                    }
+                    steps {
+                        script {
+						    def ls_out = sh(returnStdout: true, script: 'ls -la')
+							println("output of ls_out: ${ls_out}")
+							def pwd_out = sh(returnStdout: true, script: 'pwd')
+							println("output of pwd_out: ${pwd_out}")
+                            //currentBuild.displayName = sh(returnStdout: true, script: './build.sh -v').trim()
+                        }
+
+                        echo 'Get repository...'
+                        deleteDir()
+                        git branch: "${params.BranchName}", url: "${params.GitHubURL}"
+                        
+                        echo 'Get Cubrid Manager...'
+                        dir('cubridmanager') {
+                            git branch: 'develop', url: 'https://github.com/CUBRID/cubrid-manager-server.git'
+                        }
+
+                        script {
+						    def ls_out = sh(returnStdout: true, script: 'ls -la')
+							println("output of ls_out: ${ls_out}")
+							def pwd_out = sh(returnStdout: true, script: 'pwd')
+							println("output of pwd_out: ${pwd_out}")
+                            //currentBuild.displayName = sh(returnStdout: true, script: './build.sh -v').trim()
+                        }
+
+
+                        echo 'Building...'
+                        sh "scl enable devtoolset-8 -- /entrypoint.sh build"
+
+                        echo 'Packing...'
+                        sh "scl enable devtoolset-8 -- /entrypoint.sh dist -o ${OUTPUT_DIR}"
+
+                        echo 'Stashing Build...'
+                        stash includes: "${OUTPUT_DIR}/*", name: "build_release"
+
+                    }
+
+                    post {
+                        success {
+                            archiveArtifacts "${OUTPUT_DIR}/*"
+                        }
+                    }
+                }
+			}
+		}
+    }
+
+}
